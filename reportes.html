@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Reporte de Ventas</title>
+
+  <!-- Libreria para exportar a Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    body { font-family: Arial, sans-serif; background: #0a0a0a; color: white; text-align: center; margin: 0; padding: 20px; }
+    .nav { margin-bottom: 20px; text-align: left; max-width: 900px; margin: 0 auto 20px auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .btn-volver { background: #2196f3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; }
+    .btn-cerrar { background: #ff9800; color: black; padding: 10px 15px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+    .btn-excel { background: #28a745; color: white; padding: 10px 15px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+    .btn-reset-todo { background: #dc3545; color: white; padding: 10px 15px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+    .panel-reportes { background: #181818; border: 1px solid #333; border-radius: 10px; max-width: 900px; margin: 0 auto 20px auto; padding: 20px; }
+    .alerta-ciclo { background: #ff9800; color: black; padding: 15px; border-radius: 8px; font-weight: bold; margin-bottom: 20px; display: none; }
+    h2 { color: #ffeb3b; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #333; padding: 10px; text-align: center; }
+    th { background: #222; color: #4caf50; }
+    .total-caja { font-size: 1.5em; color: #00ffcc; margin-top: 15px; font-weight: bold; }
+  </style>
+</head>
+<body>
+
+  <div class="nav">
+    <a href="index.html" class="btn-volver">Volver a Mesas</a>
+    <div>
+      <button class="btn-excel" onclick="exportarExcel()">Descargar Reporte en Excel</button>
+      <button class="btn-cerrar" onclick="cerrarTurno()">Cerrar Turno Actual</button>
+      <button class="btn-reset-todo" onclick="reiniciarTodoCero()">Reiniciar Historial a 0</button>
+    </div>
+  </div>
+
+  <div id="alerta-30" class="alerta-ciclo">
+    RECORDATORIO: Ya superaste los 30 cierres. Recuerda descargar el Excel si quieres guardar la copia antes de reiniciar a 0 de forma manual.
+  </div>
+
+  <div class="panel-reportes">
+    <h2>Turno Actual (En Curso)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Mesa</th>
+          <th>Total Cobrado En Este Turno</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-actual">
+      </tbody>
+    </table>
+    <div class="total-caja" id="total-turno">Total en Caja: $0</div>
+  </div>
+
+  <div class="panel-reportes">
+    <h2>Resumen Acumulado por Ciclo (Ultimos 7, 15 y 30 Cierres)</h2>
+    <table id="tabla-resumen-excel">
+      <thead>
+        <tr>
+          <th>Periodo</th>
+          <th>Mesa 1</th>
+          <th>Mesa 2</th>
+          <th>Mesa 3</th>
+          <th>Mesa 4</th>
+          <th>Mesa 5</th>
+          <th>Mesa 6</th>
+          <th>Total Recaudado</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-resumen">
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel-reportes">
+    <h2>Historial Detallado de Turnos Cerrados</h2>
+    <table id="tabla-historial-excel">
+      <thead>
+        <tr>
+          <th>Fecha y Hora de Cierre</th>
+          <th>Mesa 1</th>
+          <th>Mesa 2</th>
+          <th>Mesa 3</th>
+          <th>Mesa 4</th>
+          <th>Mesa 5</th>
+          <th>Mesa 6</th>
+          <th>Total Recaudado</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-historial">
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    function cargarReportes() {
+      let ventasTurno = JSON.parse(localStorage.getItem('ventasTurnoActual')) || [];
+      let historialTurnos = JSON.parse(localStorage.getItem('historialTurnosBillar')) || [];
+      
+      // 1. Turno Actual
+      let tbodyActual = document.getElementById('tabla-actual');
+      tbodyActual.innerHTML = '';
+      let totalTurnoGeneral = 0;
+
+      [1, 2, 3, 4, 5, 6].forEach(idMesa => {
+        let totalMesa = 0;
+        ventasTurno.forEach(v => {
+          if (v.mesa === idMesa) totalMesa += v.monto;
+        });
+
+        totalTurnoGeneral += totalMesa;
+        let tr = document.createElement('tr');
+        tr.innerHTML = '<td>Mesa ' + idMesa + '</td><td>$' + totalMesa + '</td>';
+        tbodyActual.appendChild(tr);
+      });
+
+      document.getElementById('total-turno').innerText = 'Total en Caja: $' + totalTurnoGeneral;
+
+      // 2. Resumen 7, 15 y 30 cierres
+      let resumen = {
+        7: { m1: 0, m2: 0, m3: 0, m4: 0, m5: 0, m6: 0 },
+        15: { m1: 0, m2: 0, m3: 0, m4: 0, m5: 0, m6: 0 },
+        30: { m1: 0, m2: 0, m3: 0, m4: 0, m5: 0, m6: 0 }
+      };
+
+      historialTurnos.forEach((t, index) => {
+        let numeroTurno = index + 1;
+
+        if (numeroTurno <= 7) {
+          resumen[7].m1 += t.mesa1 || 0;
+          resumen[7].m2 += t.mesa2 || 0;
+          resumen[7].m3 += t.mesa3 || 0;
+          resumen[7].m4 += t.mesa4 || 0;
+          resumen[7].m5 += t.mesa5 || 0;
+          resumen[7].m6 += t.mesa6 || 0;
+        }
+
+        if (numeroTurno <= 15) {
+          resumen[15].m1 += t.mesa1 || 0;
+          resumen[15].m2 += t.mesa2 || 0;
+          resumen[15].m3 += t.mesa3 || 0;
+          resumen[15].m4 += t.mesa4 || 0;
+          resumen[15].m5 += t.mesa5 || 0;
+          resumen[15].m6 += t.mesa6 || 0;
+        }
+
+        if (numeroTurno <= 30) {
+          resumen[30].m1 += t.mesa1 || 0;
+          resumen[30].m2 += t.mesa2 || 0;
+          resumen[30].m3 += t.mesa3 || 0;
+          resumen[30].m4 += t.mesa4 || 0;
+          resumen[30].m5 += t.mesa5 || 0;
+          resumen[30].m6 += t.mesa6 || 0;
+        }
+      });
+
+      let total7 = resumen[7].m1 + resumen[7].m2 + resumen[7].m3 + resumen[7].m4 + resumen[7].m5 + resumen[7].m6;
+      let total15 = resumen[15].m1 + resumen[15].m2 + resumen[15].m3 + resumen[15].m4 + resumen[15].m5 + resumen[15].m6;
+      let total30 = resumen[30].m1 + resumen[30].m2 + resumen[30].m3 + resumen[30].m4 + resumen[30].m5 + resumen[30].m6;
+
+      let tbodyResumen = document.getElementById('tabla-resumen');
+      tbodyResumen.innerHTML = `
+        <tr><td>Ultimos 7 Cierres</td><td>$${resumen[7].m1}</td><td>$${resumen[7].m2}</td><td>$${resumen[7].m3}</td><td>$${resumen[7].m4}</td><td>$${resumen[7].m5}</td><td>$${resumen[7].m6}</td><td>$${total7}</td></tr>
+        <tr><td>Ultimos 15 Cierres</td><td>$${resumen[15].m1}</td><td>$${resumen[15].m2}</td><td>$${resumen[15].m3}</td><td>$${resumen[15].m4}</td><td>$${resumen[15].m5}</td><td>$${resumen[15].m6}</td><td>$${total15}</td></tr>
+        <tr><td>Ultimos 30 Cierres</td><td>$${resumen[30].m1}</td><td>$${resumen[30].m2}</td><td>$${resumen[30].m3}</td><td>$${resumen[30].m4}</td><td>$${resumen[30].m5}</td><td>$${resumen[30].m6}</td><td>$${total30}</td></tr>
+      `;
+
+      let alerta = document.getElementById('alerta-30');
+      if (historialTurnos.length >= 30) {
+        alerta.style.display = 'block';
+      } else {
+        alerta.style.display = 'none';
+      }
+
+      // 3. Historial Detallado
+      let tbodyHistorial = document.getElementById('tabla-historial');
+      tbodyHistorial.innerHTML = '';
+
+      if (historialTurnos.length === 0) {
+        tbodyHistorial.innerHTML = '<tr><td colspan=8>No hay turnos cerrados todavia</td></tr>';
+      } else {
+        historialTurnos.forEach(t => {
+          let tr = document.createElement('tr');
+          tr.innerHTML = 
+            '<td>' + t.fecha + '</td>' +
+            '<td>$' + (t.mesa1 || 0) + '</td>' +
+            '<td>$' + (t.mesa2 || 0) + '</td>' +
+            '<td>$' + (t.mesa3 || 0) + '</td>' +
+            '<td>$' + (t.mesa4 || 0) + '</td>' +
+            '<td>$' + (t.mesa5 || 0) + '</td>' +
+            '<td>$' + (t.mesa6 || 0) + '</td>' +
+            '<td>$' + t.total + '</td>';
+          tbodyHistorial.appendChild(tr);
+        });
+      }
+    }
+
+    function cerrarTurno() {
+      let ventasTurno = JSON.parse(localStorage.getItem('ventasTurnoActual')) || [];
+      
+      if (ventasTurno.length === 0) {
+        return alert('No hay ventas registradas en este turno para cerrar');
+      }
+
+      let m1 = 0, m2 = 0, m3 = 0, m4 = 0, m5 = 0, m6 = 0;
+      ventasTurno.forEach(v => {
+        if (v.mesa === 1) m1 += v.monto;
+        if (v.mesa === 2) m2 += v.monto;
+        if (v.mesa === 3) m3 += v.monto;
+        if (v.mesa === 4) m4 += v.monto;
+        if (v.mesa === 5) m5 += v.monto;
+        if (v.mesa === 6) m6 += v.monto;
+      });
+
+      let totalTurno = m1 + m2 + m3 + m4 + m5 + m6;
+
+      if (confirm('Seguro que quieres cerrar el turno? Se guardara un total de $' + totalTurno)) {
+        let historialTurnos = JSON.parse(localStorage.getItem('historialTurnosBillar')) || [];
+        
+        let ahora = new Date();
+        let fechaFormateada = ahora.toLocaleDateString() + ' ' + ahora.toLocaleTimeString();
+
+        historialTurnos.unshift({
+          fecha: fechaFormateada,
+          mesa1: m1,
+          mesa2: m2,
+          mesa3: m3,
+          mesa4: m4,
+          mesa5: m5,
+          mesa6: m6,
+          total: totalTurno
+        });
+
+        localStorage.setItem('historialTurnosBillar', JSON.stringify(historialTurnos));
+        localStorage.removeItem('ventasTurnoActual');
+
+        alert('Turno cerrado con exito');
+        cargarReportes();
+      }
+    }
+
+    function reiniciarTodoCero() {
+      let paso1 = confirm('Seguro que quieres borrar todo el historial y reiniciar las cuentas a 0?');
+      if (paso1) {
+        let paso2 = confirm('ATENCION: Esto borrara todas las ventas acumuladas del ciclo. Ya descargaste la copia en Excel?');
+        if (paso2) {
+          localStorage.clear();
+          alert('Sistema reiniciado a 0 con exito');
+          cargarReportes();
+        }
+      }
+    }
+
+    function exportarExcel() {
+      let wb = XLSX.utils.book_new();
+
+      let tablaResumen = document.getElementById('tabla-resumen-excel');
+      let wsResumen = XLSX.utils.table_to_sheet(tablaResumen);
+      XLSX.utils.book_append_sheet(wb, wsResumen, "Resumen Acumulado");
+
+      let tablaHistorial = document.getElementById('tabla-historial-excel');
+      let wsHistorial = XLSX.utils.table_to_sheet(tablaHistorial);
+      XLSX.utils.book_append_sheet(wb, wsHistorial, "Historial Turnos");
+
+      XLSX.writeFile(wb, 'Reporte_Ventas_Billar.xlsx');
+    }
+
+    cargarReportes();
+  </script>
+</body>
+<a href="index.html"></a>
+</html>

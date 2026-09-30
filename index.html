@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control de Tiempo y Cobro - Billar</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: Arial, sans-serif; }
+    body { background-color: #0a0a0a; color: #ffffff; padding: 20px; text-align: center; }
+    
+    .nav {
+      margin-bottom: 20px;
+      text-align: left;
+      max-width: 920px;
+      margin: 0 auto 20px auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    h1 { color: #4caf50; font-size: 24px; }
+
+    .acciones-top {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-reportes {
+      background-color: #2196f3;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      text-decoration: none;
+    }
+
+    .contenedor-mesas { 
+      display: flex; 
+      flex-wrap: wrap; 
+      gap: 20px; 
+      justify-content: center; 
+      max-width: 920px; 
+      margin: 0 auto; 
+    }
+
+    .tarjeta-mesa { background-color: #181818; border: 1px solid #333; border-radius: 10px; padding: 20px; width: 280px; text-align: center; }
+    .titulo-mesa { font-size: 22px; margin-bottom: 10px; color: #ffeb3b; }
+    .reloj { font-size: 36px; font-weight: bold; font-family: monospace; margin: 15px 0; background: #000; padding: 10px; border-radius: 5px; color: #00ffcc; }
+    .tarifa-info { font-size: 18px; margin-bottom: 15px; color: #81c784; }
+    
+    .grupo-botones { display: flex; gap: 5px; justify-content: center; margin-bottom: 10px; }
+    button { padding: 8px 12px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+    button:hover { opacity: 0.8; }
+    
+    .btn-iniciar { background-color: #4caf50; color: white; }
+    .btn-pausar { background-color: #ff9800; color: white; }
+    .btn-reiniciar { background-color: #f44336; color: white; }
+
+    .btn-menos1 { background-color: #e91e63; color: white; }
+    .btn-menos5 { background-color: #9c27b0; color: white; }
+    .btn-ajuste30 { background-color: #00bcd4; color: black; }
+
+    .seccion-ajustes { margin-top: 15px; padding-top: 10px; border-top: 1px solid #333; }
+    .subtitulo-ajuste { font-size: 12px; color: #aaa; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+
+  <div class="nav">
+    <h1>SISTEMA DE CONTROL DE MESAS DE BILLAR</h1>
+    <div class="acciones-top">
+      <a href="reportes.html" class="btn-reportes">📊 Reporte de Ventas</a>
+    </div>
+  </div>
+
+  <div class="contenedor-mesas">
+    <!-- MESA 1 -->
+    <div class="tarjeta-mesa">
+      <div class="titulo-mesa">Mesa 1</div>
+      <div class="reloj" id="reloj-1">00:00:00</div>
+      <div class="tarifa-info" id="tarifa-1">Total: $0</div>
+
+      <div class="grupo-botones">
+        <button class="btn-iniciar" onclick="iniciarMesa(1)">Iniciar</button>
+        <button class="btn-pausar" onclick="pausarMesa(1)">Pausar</button>
+        <button class="btn-reiniciar" onclick="cobrarMesa(1)">Cobrar</button>
+      </div>
+
+      <div class="seccion-ajustes">
+        <div class="subtitulo-ajuste">Ajuste de tolerancia de tiempo:</div>
+        <div class="grupo-botones">
+          <button class="btn-menos1" onclick="restarUnMinuto(1)">-1 Min</button>
+          <button class="btn-menos5" onclick="restarCincoMinutos(1)">-5 Min</button>
+          <button class="btn-ajuste30" onclick="congelarEnBloque30(1)">Ajustar a 30m</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MESA 2 -->
+    <div class="tarjeta-mesa">
+      <div class="titulo-mesa">Mesa 2</div>
+      <div class="reloj" id="reloj-2">00:00:00</div>
+      <div class="tarifa-info" id="tarifa-2">Total: $0</div>
+
+      <div class="grupo-botones">
+        <button class="btn-iniciar" onclick="iniciarMesa(2)">Iniciar</button>
+        <button class="btn-pausar" onclick="pausarMesa(2)">Pausar</button>
+        <button class="btn-reiniciar" onclick="cobrarMesa(2)">Cobrar</button>
+      </div>
+
+      <div class="seccion-ajustes">
+        <div class="subtitulo-ajuste">Ajuste de tolerancia de tiempo:</div>
+        <div class="grupo-botones">
+          <button class="btn-menos1" onclick="restarUnMinuto(2)">-1 Min</button>
+          <button class="btn-menos5" onclick="restarCincoMinutos(2)">-5 Min</button>
+          <button class="btn-ajuste30" onclick="congelarEnBloque30(2)">Ajustar a 30m</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MESA 3 -->
+    <div class="tarjeta-mesa">
+      <div class="titulo-mesa">Mesa 3</div>
+      <div class="reloj" id="reloj-3">00:00:00</div>
+      <div class="tarifa-info" id="tarifa-3">Total: $0</div>
+
+      <div class="grupo-botones">
+        <button class="btn-iniciar" onclick="iniciarMesa(3)">Iniciar</button>
+        <button class="btn-pausar" onclick="pausarMesa(3)">Pausar</button>
+        <button class="btn-reiniciar" onclick="cobrarMesa(3)">Cobrar</button>
+      </div>
+
+      <div class="seccion-ajustes">
+        <div class="subtitulo-ajuste">Ajuste de tolerancia de tiempo:</div>
+        <div class="grupo-botones">
+          <button class="btn-menos1" onclick="restarUnMinuto(3)">-1 Min</button>
+          <button class="btn-menos5" onclick="restarCincoMinutos(3)">-5 Min</button>
+          <button class="btn-ajuste30" onclick="congelarEnBloque30(3)">Ajustar a 30m</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MESA 4 -->
+    <div class="tarjeta-mesa">
+      <div class="titulo-mesa">Mesa 4</div>
+      <div class="reloj" id="reloj-4">00:00:00</div>
+      <div class="tarifa-info" id="tarifa-4">Total: $0</div>
+
+      <div class="grupo-botones">
+        <button class="btn-iniciar" onclick="iniciarMesa(4)">Iniciar</button>
+        <button class="btn-pausar" onclick="pausarMesa(4)">Pausar</button>
+        <button class="btn-reiniciar" onclick="cobrarMesa(4)">Cobrar</button>
+      </div>
+
+      <div class="seccion-ajustes">
+        <div class="subtitulo-ajuste">Ajuste de tolerancia de tiempo:</div>
+        <div class="grupo-botones">
+          <button class="btn-menos1" onclick="restarUnMinuto(4)">-1 Min</button>
+          <button class="btn-menos5" onclick="restarCincoMinutos(4)">-5 Min</button>
+          <button class="btn-ajuste30" onclick="congelarEnBloque30(4)">Ajustar a 30m</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MESA 5 -->
+    <div class="tarjeta-mesa">
+      <div class="titulo-mesa">Mesa 5</div>
+      <div class="reloj" id="reloj-5">00:00:00</div>
+      <div class="tarifa-info" id="tarifa-5">Total: $0</div>
+
+      <div class="grupo-botones">
+        <button class="btn-iniciar" onclick="iniciarMesa(5)">Iniciar</button>
+        <button class="btn-pausar" onclick="pausarMesa(5)">Pausar</button>
+        <button class="btn-reiniciar" onclick="cobrarMesa(5)">Cobrar</button>
+      </div>
+
+      <div class="seccion-ajustes">
+        <div class="subtitulo-ajuste">Ajuste de tolerancia de tiempo:</div>
+        <div class="grupo-botones">
+          <button class="btn-menos1" onclick="restarUnMinuto(5)">-1 Min</button>
+          <button class="btn-menos5" onclick="restarCincoMinutos(5)">-5 Min</button>
+          <button class="btn-ajuste30" onclick="congelarEnBloque30(5)">Ajustar a 30m</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MESA 6 -->
+    <div class="tarjeta-mesa">
+      <div class="titulo-mesa">Mesa 6</div>
+      <div class="reloj" id="reloj-6">00:00:00</div>
+      <div class="tarifa-info" id="tarifa-6">Total: $0</div>
+
+      <div class="grupo-botones">
+        <button class="btn-iniciar" onclick="iniciarMesa(6)">Iniciar</button>
+        <button class="btn-pausar" onclick="pausarMesa(6)">Pausar</button>
+        <button class="btn-reiniciar" onclick="cobrarMesa(6)">Cobrar</button>
+      </div>
+
+      <div class="seccion-ajustes">
+        <div class="subtitulo-ajuste">Ajuste de tolerancia de tiempo:</div>
+        <div class="grupo-botones">
+          <button class="btn-menos1" onclick="restarUnMinuto(6)">-1 Min</button>
+          <button class="btn-menos5" onclick="restarCincoMinutos(6)">-5 Min</button>
+          <button class="btn-ajuste30" onclick="congelarEnBloque30(6)">Ajustar a 30m</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const TARIFA_30_MIN = 4000;
+    const INTERVALO_RELOJ_MS = 1000;
+    
+    function cargarEstadoMesa() {
+      try {
+        let datos = JSON.parse(localStorage.getItem('estadoMesasBillar'));
+        if (datos && typeof datos === 'object' && datos[1] && datos[4] && datos[5] && datos[6]) {
+          return datos;
+        }
+      } catch (e) {}
+      
+      return {
+        1: { activo: false, inicio: 0, acumulado: 0 },
+        2: { activo: false, inicio: 0, acumulado: 0 },
+        3: { activo: false, inicio: 0, acumulado: 0 },
+        4: { activo: false, inicio: 0, acumulado: 0 },
+        5: { activo: false, inicio: 0, acumulado: 0 },
+        6: { activo: false, inicio: 0, acumulado: 0 }
+      };
+    }
+
+    let estadoMesas = cargarEstadoMesa();
+    let intervalos = { 1: null, 2: null, 3: null, 4: null, 5: null, 6: null };
+
+    function guardarEstado() {
+      localStorage.setItem('estadoMesasBillar', JSON.stringify(estadoMesas));
+    }
+
+    function obtenerSegundos(idMesa) {
+      let mesa = estadoMesas[idMesa];
+      if (!mesa) return 0;
+      
+      if (mesa.activo) {
+        let ahora = Date.now();
+        let transcurrido = Math.floor((ahora - mesa.inicio) / 1000);
+        return (mesa.acumulado || 0) + transcurrido;
+      }
+      return mesa.acumulado || 0;
+    }
+
+    function iniciarMesa(idMesa) {
+      if (!estadoMesas[idMesa]) {
+        estadoMesas[idMesa] = { activo: false, inicio: 0, acumulado: 0 };
+      }
+
+      if (!estadoMesas[idMesa].activo) {
+        estadoMesas[idMesa].activo = true;
+        estadoMesas[idMesa].inicio = Date.now();
+        guardarEstado();
+      }
+      
+      if (intervalos[idMesa]) {
+        clearInterval(intervalos[idMesa]);
+      }
+
+      intervalos[idMesa] = setInterval(() => {
+        actualizarPantallaMesa(idMesa);
+      }, INTERVALO_RELOJ_MS);
+
+      actualizarPantallaMesa(idMesa);
+    }
+
+    function pausarMesa(idMesa) {
+      if (!estadoMesas[idMesa]) return;
+
+      if (estadoMesas[idMesa].activo) {
+        estadoMesas[idMesa].acumulado = obtenerSegundos(idMesa);
+        estadoMesas[idMesa].activo = false;
+        estadoMesas[idMesa].inicio = 0;
+        guardarEstado();
+      }
+      if (intervalos[idMesa]) {
+        clearInterval(intervalos[idMesa]);
+        intervalos[idMesa] = null;
+      }
+      actualizarPantallaMesa(idMesa);
+    }
+
+    function cobrarMesa(idMesa) {
+      let totalSegundos = obtenerSegundos(idMesa);
+      let totalPagar = calcularTarifa(totalSegundos);
+
+      if (totalPagar > 0) {
+        // Se acumula directamente en la memoria local sin borrar nada previo
+        let ventasTurno = JSON.parse(localStorage.getItem('ventasTurnoActual')) || [];
+        ventasTurno.push({
+          mesa: idMesa,
+          monto: totalPagar,
+          fecha: new Date().toISOString()
+        });
+        localStorage.setItem('ventasTurnoActual', JSON.stringify(ventasTurno));
+        alert("Mesa " + idMesa + " cobrada: $" + totalPagar);
+      } else {
+        alert("La Mesa " + idMesa + " no tiene tiempo registrado para cobrar.");
+      }
+
+      if (intervalos[idMesa]) {
+        clearInterval(intervalos[idMesa]);
+        intervalos[idMesa] = null;
+      }
+
+      estadoMesas[idMesa] = { activo: false, inicio: 0, acumulado: 0 };
+      guardarEstado();
+      actualizarPantallaMesa(idMesa);
+    }
+
+    function restarUnMinuto(idMesa) {
+      if (!estadoMesas[idMesa]) return;
+      let actual = obtenerSegundos(idMesa);
+      let nuevo = actual >= 60 ? actual - 60 : 0;
+      estadoMesas[idMesa].acumulado = nuevo;
+      if (estadoMesas[idMesa].activo) {
+        estadoMesas[idMesa].inicio = Date.now();
+      }
+      guardarEstado();
+      actualizarPantallaMesa(idMesa);
+    }
+
+    function restarCincoMinutos(idMesa) {
+      if (!estadoMesas[idMesa]) return;6
+      let actual = obtenerSegundos(idMesa);
+      let nuevo = actual >= 300 ? actual - 300 : 0;
+      estadoMesas[idMesa].acumulado = nuevo;
+      if (estadoMesas[idMesa].activo) {
+        estadoMesas[idMesa].inicio = Date.now();
+      }
+      guardarEstado();
+      actualizarPantallaMesa(idMesa);
+    }
+
+    function congelarEnBloque30(idMesa) {
+      if (!estadoMesas[idMesa]) return;
+      let segundos = obtenerSegundos(idMesa);
+      let bloques = Math.floor(segundos / 1800);
+      if (bloques > 0) {
+        estadoMesas[idMesa].acumulado = bloques * 1800;
+        if (estadoMesas[idMesa].activo) {
+          estadoMesas[idMesa].inicio = Date.now();
+        }
+        guardarEstado();
+        actualizarPantallaMesa(idMesa);
+      } else {
+        alert("La mesa no ha cumplido 30 minutos todavia");
+      }
+    }
+
+    function calcularTarifa(segundos) {
+      if (!segundos || segundos <= 0) return 0;
+      let bloquesDe30 = Math.ceil(segundos / 1800);
+      return bloquesDe30 * TARIFA_30_MIN;
+    }
+
+    function formatearTiempo(segundosTotales) {
+      if (isNaN(segundosTotales) || segundosTotales < 0) segundosTotales = 0;
+      let hrs = Math.floor(segundosTotales / 3600);
+      let mins = Math.floor((segundosTotales % 3600) / 60);
+      let segs = segundosTotales % 60;
+      return (hrs < 10 ? "0" + hrs : hrs) + ":" + (mins < 10 ? "0" + mins : mins) + ":" + (segs < 10 ? "0" + segs : segs);
+    } 
+
+    function actualizarPantallaMesa(idMesa) {
+      let totalSegundos = obtenerSegundos(idMesa);
+      let elReloj = document.getElementById("reloj-" + idMesa);
+      let elTarifa = document.getElementById("tarifa-" + idMesa);
+
+      if (elReloj) elReloj.textContent = formatearTiempo(totalSegundos);
+      if (elTarifa) elTarifa.textContent = "Total: $" + calcularTarifa(totalSegundos);
+    }
+
+    [1, 2, 3, 4, 5, 6].forEach(idMesa => {
+      if (estadoMesas[idMesa] && estadoMesas[idMesa].activo) {
+        iniciarMesa(idMesa);
+      } else {
+        actualizarPantallaMesa(idMesa);
+      }
+    });
+  </script>
+</body>
+<a href="reportes.html"></a>
+</html>
